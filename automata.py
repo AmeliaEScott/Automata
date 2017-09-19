@@ -1,5 +1,5 @@
 import json
-
+import random
 
 class Automaton:
 
@@ -69,8 +69,16 @@ class Automaton:
         return self.currentstate
 
 
-inputsequence = "1010"
+inputsequence = "100010"
+#inputsequence = map(lambda x: random.choice(["1", "0"]), range(1, 200))
 
 automaton = Automaton("Samples/sample.json")
+stuff = set()
 for input in inputsequence:
+    #stuff.add(repr(automaton.step(input)))
     print(automaton.step(input))
+
+print(repr({'A', 'B'}) in stuff)
+print(repr({'A'}) in stuff)
+print(repr({}) in stuff)
+print(repr({'C'}) in stuff)
