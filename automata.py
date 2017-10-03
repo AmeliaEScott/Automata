@@ -1,5 +1,7 @@
 import json
 import random
+import itertools
+import matplotlib.pyplot
 
 class Automaton:
 
@@ -68,17 +70,51 @@ class Automaton:
         self.currentstate = self.getnextstate(nextinput)
         return self.currentstate
 
+    def layout(self, alignment=0.2, separation=0.5, steps=100, speed=0.01):
+        result = {}
 
-inputsequence = "100010"
+        def dist(p1, p2):
+            return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
+
+        def mix(p1, p2, weight):
+            return (1.0 - weight) * p1[0] + weight * p2[0], (1.0 - weight) * p1[1] + weight * p2[1]
+        for state in self.states:
+            result[state] = ((random.random() - 0.5) * 2, (random.random() - 0.5) * 2)
+        for i in range(steps):
+            nextresult = result.copy()
+            # The following loop iterates over every pair of states that are are not the same
+            # and are connected by a transition.
+            for state, otherstate in filter(lambda x: x[0] != x[1], itertools.product(result.keys(), result.keys())):
+                if otherstate in self.states[state] or state in self.states[otherstate]:
+                    #print("States {} and {} are connected. ".format(state, otherstate), end="")
+                    if dist(nextresult[state], nextresult[otherstate]) > alignment:
+                        #print("Too far away! Moving closer.")
+                        nextresult[state] = mix(nextresult[state], nextresult[otherstate], speed)
+                        nextresult[otherstate] = mix(nextresult[otherstate], nextresult[state], speed)
+                    else:
+                        #print("Too close! Moving further away.")
+                        nextresult[state] = mix(nextresult[state], nextresult[otherstate], -speed)
+                        nextresult[otherstate] = mix(nextresult[otherstate], nextresult[state], -speed)
+                elif dist(nextresult[state], nextresult[otherstate]) < separation:
+                    #print("States {} and {} are NOT connected. Too close! Moving away.".format(state, otherstate))
+                    nextresult[state] = mix(nextresult[state], nextresult[otherstate], -speed)
+                    nextresult[otherstate] = mix(nextresult[otherstate], nextresult[state], -speed)
+                else:
+                    pass
+                    #print("States {} and {} are NOT connected. Far enough away, doing nothing.".format(state, otherstate))
+            result = nextresult
+        return result
+
+
+inputsequence = "ababa"
 #inputsequence = map(lambda x: random.choice(["1", "0"]), range(1, 200))
 
-automaton = Automaton("Samples/sample.json")
-stuff = set()
+automaton = Automaton("Samples/sample2.json")
 for input in inputsequence:
-    #stuff.add(repr(automaton.step(input)))
     print(automaton.step(input))
-
-print(repr({'A', 'B'}) in stuff)
-print(repr({'A'}) in stuff)
-print(repr({}) in stuff)
-print(repr({'C'}) in stuff)
+layout = automaton.layout(steps=1000, separation=1.0)
+states = sorted(layout.keys())
+x = [layout[state][0] for state in states]
+y = [layout[state][1] for state in states]
+matplotlib.pyplot.scatter(x, y, c=['red', 'orange', 'yellow', 'green', 'blue', 'purple'])
+matplotlib.pyplot.show()
