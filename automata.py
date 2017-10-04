@@ -1,7 +1,8 @@
 import json
 import random
 import itertools
-import matplotlib.pyplot
+import math
+
 
 class Automaton:
 
@@ -70,51 +71,64 @@ class Automaton:
         self.currentstate = self.getnextstate(nextinput)
         return self.currentstate
 
-    def layout(self, alignment=0.2, separation=0.5, steps=100, speed=0.01):
-        result = {}
+    def layout(self, alignment=1.0, separation=1.2, steps=500, maxspeed=0.2, speed=math.e) -> dict:
+        """
+        Lays out the states to try and minimize overlap between states and transitions.
+        This is accomplished by treating each connection between states as a spring of a certain length,
+        which pushes and pulls states.
+        :param alignment: Length of springs between states with transitions between them.
+        :param separation: Length of springs between states without any transition between them.
+        :param steps: Number of steps for which to run the simulation
+        :param maxspeed: Maximum "speed" for states to be moved around during simulation.
+        :param speed: A constant that just needs to be arbitrarily tweaked.
+        :return: A dictionary where each state in this automaton is a key, the value for which is a 2-tuple
+                    representing the coordinates of the state after the layout is complete.
+        """
+        # TODO: Run multiple simulations, and determine which one has the least overlap.
 
+        # Calculates the distance between two 2-tuples
         def dist(p1, p2):
             return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
 
-        def mix(p1, p2, weight):
-            return (1.0 - weight) * p1[0] + weight * p2[0], (1.0 - weight) * p1[1] + weight * p2[1]
-        for state in self.states:
-            result[state] = ((random.random() - 0.5) * 2, (random.random() - 0.5) * 2)
+        # Initialize the location of every state to a random point in the range (-1, 1)
+        result = {state: ((random.random() - 0.5) * 2, (random.random() - 0.5) * 2) for state in self.states}
         for i in range(steps):
-            nextresult = result.copy()
+            # Stores up the cumulative displacement on each state. Starts out at zero.
+            displacements = {state: [0, 0] for state in result}
             # The following loop iterates over every pair of states that are are not the same
-            # and are connected by a transition.
             for state, otherstate in filter(lambda x: x[0] != x[1], itertools.product(result.keys(), result.keys())):
-                if otherstate in self.states[state] or state in self.states[otherstate]:
-                    #print("States {} and {} are connected. ".format(state, otherstate), end="")
-                    if dist(nextresult[state], nextresult[otherstate]) > alignment:
-                        #print("Too far away! Moving closer.")
-                        nextresult[state] = mix(nextresult[state], nextresult[otherstate], speed)
-                        nextresult[otherstate] = mix(nextresult[otherstate], nextresult[state], speed)
-                    else:
-                        #print("Too close! Moving further away.")
-                        nextresult[state] = mix(nextresult[state], nextresult[otherstate], -speed)
-                        nextresult[otherstate] = mix(nextresult[otherstate], nextresult[state], -speed)
-                elif dist(nextresult[state], nextresult[otherstate]) < separation:
-                    #print("States {} and {} are NOT connected. Too close! Moving away.".format(state, otherstate))
-                    nextresult[state] = mix(nextresult[state], nextresult[otherstate], -speed)
-                    nextresult[otherstate] = mix(nextresult[otherstate], nextresult[state], -speed)
-                else:
-                    pass
-                    #print("States {} and {} are NOT connected. Far enough away, doing nothing.".format(state, otherstate))
+                distance = dist(result[state], result[otherstate])
+                if otherstate in self.states[state]:  # If these states are connected:
+                    force = distance - alignment
+                else:  # If they are not connected:
+                    # The "min(..., 0)" ensure that if the states are already far enough apart, then
+                    # no more force is exerted.
+                    force = min(distance - separation, 0)
+                alpha = -speed ** (-abs(force) + math.log(maxspeed, speed)) + maxspeed
+                if force < 0:
+                    alpha = -alpha
+                # Do not yet move the state, just add the displacement to what's already there. This way,
+                # for states that have multiple connections, they move based on the total net displacement
+                # after all forces are calculated.
+                displacements[otherstate][0] += (alpha / distance) * (result[state][0] - result[otherstate][0])
+                displacements[otherstate][1] += (alpha / distance) * (result[state][1] - result[otherstate][1])
+            # Here is where the forces are actually exerted.
+            nextresult = {state: (result[state][0] + displacements[state][0],
+                                  result[state][1] + displacements[state][1]) for state in result}
+            # (This has to be two steps because you can't modify a data structure while iterating over it)
             result = nextresult
         return result
 
 
-inputsequence = "ababa"
-#inputsequence = map(lambda x: random.choice(["1", "0"]), range(1, 200))
+if __name__ == "__main__":
 
-automaton = Automaton("Samples/sample2.json")
-for input in inputsequence:
-    print(automaton.step(input))
-layout = automaton.layout(steps=1000, separation=1.0)
-states = sorted(layout.keys())
-x = [layout[state][0] for state in states]
-y = [layout[state][1] for state in states]
-matplotlib.pyplot.scatter(x, y, c=['red', 'orange', 'yellow', 'green', 'blue', 'purple'])
-matplotlib.pyplot.show()
+    inputsequence = "ababa"
+    # inputsequence = map(lambda x: random.choice(["1", "0"]), range(1, 200))
+
+    automaton = Automaton("Samples/sample2.json")
+    for character in inputsequence:
+        print(automaton.step(character))
+    layout = automaton.layout(steps=1000, separation=1.0, maxspeed=0.1)
+    states = sorted(layout.keys())
+    x = [layout[state][0] for state in states]
+    y = [layout[state][1] for state in states]
