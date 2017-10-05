@@ -120,7 +120,7 @@ class Gui:
 if __name__ == "__main__":
 
     testgui = Gui()
-    testautomaton = Automaton("Samples/sample4.json")
+    testautomaton = Automaton("Samples/sample1.json")
     # testgui.drawautomaton(testautomaton, arcangle=0.5)
     layout = testautomaton.layout(alignment=1.0, separation=1.2, steps=500, maxspeed=0.01, speed=5.0, generate=True)
 
@@ -132,7 +132,10 @@ if __name__ == "__main__":
             newlayout = layout.__next__()
             testgui.canvas.delete(tk.ALL)
             testgui.drawautomaton(testautomaton, layout=newlayout)
-            testgui.frame.after(50, test)
+            # After 20 milliseconds, run the function test.
+            # Any TK GUI element has this "after" function, and it doesn't seem important which object you use.
+            # So I just use the frame, which encloses the entire window.
+            testgui.frame.after(20, test)
         except StopIteration:
             pass
 

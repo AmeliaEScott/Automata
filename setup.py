@@ -5,7 +5,8 @@ import sys
 # fine tuning.
 all_build_options = {
     'packages': [],
-    'excludes': []
+    'excludes': [],
+    'include_files': ["Samples/"]
 }
 
 mac_options = {

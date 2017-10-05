@@ -2,6 +2,8 @@ import json
 import random
 import itertools
 import math
+import sys
+import os
 
 
 class Automaton:
@@ -10,6 +12,14 @@ class Automaton:
         """
         :param filepath: Path to the file containing the specification for this automaton
         """
+        if getattr(sys, "frozen", False):
+            # The application is frozen.
+            datadir = os.path.dirname(sys.executable)
+        else:
+            # The application is not frozen.
+            datadir = os.path.dirname(__file__)
+        filepath = os.path.join(datadir, filepath)
+
         with open(filepath) as file:
             data = json.load(file)
         self.name = data["name"]
