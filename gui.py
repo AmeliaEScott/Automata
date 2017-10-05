@@ -37,17 +37,19 @@ class Gui:
         print("Quitting!")
         self.frame.quit()
 
-    def drawautomaton(self, automaton: Automaton, border=200, arcangle=0.5, stateradius=20):
+    def drawautomaton(self, automaton: Automaton, border=200, arcangle=0.5, stateradius=20, layout=None):
         """
         Draws the provided automaton on the canvas.
         :param automaton: Automaton to be drawn
         :param border: Amount of empty space to be left around the edges of the canvas
         :param arcangle: Angle of arcs between states, in radians. (Bigger angle = more curve)
         :param stateradius: Radius of circles representing states, in pixels.
+        :param layout: Layout to use. If None, then automaton.layout() is used.
         :return: None
         """
         border += stateradius
-        layout = automaton.layout()
+        if layout is None:
+            layout = automaton.layout()
         minx = min(i[0] for i in layout.values())
         miny = min(i[1] for i in layout.values())
         maxx = max(i[0] for i in layout.values())
@@ -116,7 +118,23 @@ class Gui:
 
 
 if __name__ == "__main__":
+
     testgui = Gui()
-    testautomaton = Automaton("Samples/sample2.json")
-    testgui.drawautomaton(testautomaton, arcangle=0.5)
+    testautomaton = Automaton("Samples/sample4.json")
+    # testgui.drawautomaton(testautomaton, arcangle=0.5)
+    layout = testautomaton.layout(alignment=1.0, separation=1.2, steps=500, maxspeed=0.01, speed=5.0, generate=True)
+
+    def test():
+        global testgui
+        global testautomaton
+        global layout
+        try:
+            newlayout = layout.__next__()
+            testgui.canvas.delete(tk.ALL)
+            testgui.drawautomaton(testautomaton, layout=newlayout)
+            testgui.frame.after(50, test)
+        except StopIteration:
+            pass
+
+    test()
     testgui.mainloop()
