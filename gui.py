@@ -9,10 +9,11 @@ class Gui:
     testing, and will be removed or changed eventually. (This includes the initializer)
     """
 
-    def __init__(self, canvaswidth=700, canvasheight=700):
+    def __init__(self, canvaswidth=700, canvasheight=700, automaton=None):
 
         self.canvaswidth = canvaswidth
         self.canvasheight = canvasheight
+        self.automaton = automaton
 
         self.frame = tk.Frame(tk.Tk())
         self.frame.pack()
@@ -20,12 +21,11 @@ class Gui:
         self.canvas = tk.Canvas(master=self.frame, bg="white", borderwidth=0,
                                 height=self.canvasheight, width=self.canvaswidth)
         self.canvas.pack()
-        # self.arc = self.canvas.create_arc([20, 20, 120, 120], outline="red", start=0, extent=180, style=tk.ARC)
 
-        # self.canvas.create_text([100, 600], text="(1, 6)", fill="green")
-        # self.canvas.create_text([100, 100], text="(1, 1)", fill="green")
-        # self.canvas.create_text([600, 100], text="(6, 1)", fill="green")
+        if self.automaton is not None:
+            self.drawautomaton(self.automaton)
 
+        # TODO: Add all the GUI elements. ((((( JARED, THIS IS PROBABLY WHERE YOU WANT TO DO THAT )))))
         self.quit_button = tk.Button(self.frame, text="Quit", command=self.quit)
         self.quit_button.pack(side=tk.RIGHT)
 
@@ -37,7 +37,7 @@ class Gui:
         print("Quitting!")
         self.frame.quit()
 
-    def drawautomaton(self, automaton: Automaton, border=200, arcangle=0.5, stateradius=20, layout=None):
+    def drawautomaton(self, automaton: Automaton, border=50, arcangle=0.7, stateradius=30, layout=None):
         """
         Draws the provided automaton on the canvas.
         :param automaton: Automaton to be drawn
@@ -60,31 +60,35 @@ class Gui:
             y = (coords[1] - miny) * (self.canvasheight - (2 * border)) / (maxy - miny) + border
             return x, y
 
-        for state in layout:
-            coords = scale(layout[state])
-            self.drawstate(coords, state)
-
         for state_a in automaton.states:
             for state_b in automaton.states[state_a]:
-                # TODO: Add the appropriate label
-                self.drawarc(scale(layout[state_a]), scale(layout[state_b]), label=state_a + state_b,
+                transition = automaton.states[state_a][state_b]
+                label = ", ".join(transition)
+                self.drawarc(scale(layout[state_a]), scale(layout[state_b]), label=label,
                              theta=arcangle)
 
-    def drawstate(self, coords, label, radius=20, statecolor="red", textcolor="black"):
+        for state in layout:
+            coords = scale(layout[state])
+            self.drawstate(coords, state, final=state in automaton.finalstates)
+
+    def drawstate(self, coords, label, radius=30, final=False):
         """
         Draws a single state on the canvas, including its label.
         :param coords: Coordinates on the canvas at which to draw the state.
         :param label: Label or name of the state.
         :param radius: Radius in pixels of the circle representing the state
-        :param statecolor: Color of the state (any valid Tk color).
-        :param textcolor: Color of the text label (any valid Tk color).
+        :param final: If True, this state will be rendered as a final state (with double outline)
         :return: None
         """
         self.canvas.create_oval([coords[0] - radius, coords[1] - radius,
-                                coords[0] + radius, coords[1] + radius], fill=statecolor)
-        self.canvas.create_text(coords, text=label, fill=textcolor)
+                                coords[0] + radius, coords[1] + radius], fill="white", outline="black", width=5)
+        if final:
+            self.canvas.create_oval([coords[0] - radius + 10, coords[1] - radius + 10,
+                                     coords[0] + radius - 10, coords[1] + radius - 10],
+                                    fill="white", outline="black", width=5)
+        self.canvas.create_text(coords, text=label, fill="black")
 
-    def drawarc(self, a, b, label, theta=0.5, labeloffset=10):
+    def drawarc(self, a, b, label, theta=0.5, labeloffset=-10, stateradius=30, arrowangle=0.4, arrowlength=25):
         """
         Draws an arc between two points (to represent a state transition)
         :param a: First point, as a 2-tuple
@@ -92,8 +96,12 @@ class Gui:
         :param label: Label of this transition
         :param theta: Angle of the arc
         :param labeloffset: Number of pixels away from the arc that the label should be placed
+        :param stateradius: Radius of the states, in pixels, in order to properly draw arrow
+        :param arrowangle: Angle of the arrow in radians. (Bigger angle = fatter arrow)
+        :param arrowlength: Length of arrow, in pixels
         :return: None
         """
+        # TODO: Deal with arcs that start and end at same state
         d = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5            # Distance between A and B
         r = d / (2 * math.sin(theta / 2))
         try:
@@ -109,35 +117,47 @@ class Gui:
         theta_a_degrees = theta_a * (180 / math.pi)
         theta_degrees = theta * (180 / math.pi)
 
-        label_dx = (r + labeloffset) * math.cos(theta_a + theta / 2)
-        label_dy = (r + labeloffset) * math.sin(theta_a + theta / 2)
+        label_dx = (r + labeloffset) * math.cos(theta_a + (theta / 2) / 2)  # Offset from center to place label
+        label_dy = (r + labeloffset) * math.sin(theta_a + (theta / 2) / 2)
 
-        self.canvas.create_text([cx + label_dx, cy - label_dy], text=label, fill="blue")
+        phi = 2 * math.asin(stateradius / (2 * r))
+        arrowpoint_x = cx + (r * math.cos(theta_a + theta - phi))
+        arrowpoint_y = cy - (r * math.sin(theta_a + theta - phi))
+
+        arrow_x1 = arrowpoint_x + (arrowlength * math.cos(theta_a + theta - (math.pi / 2) - arrowangle))
+        arrow_y1 = arrowpoint_y - (arrowlength * math.sin(theta_a + theta - (math.pi / 2) - arrowangle))
+
+        arrow_x2 = arrowpoint_x + (arrowlength * math.cos(theta_a + theta - (math.pi / 2) + arrowangle))
+        arrow_y2 = arrowpoint_y - (arrowlength * math.sin(theta_a + theta - (math.pi / 2) + arrowangle))
+
         self.canvas.create_arc([cx - r, cy - r, cx + r, cy + r], start=theta_a_degrees, extent=theta_degrees,
-                               outline="red", style=tk.ARC)
+                               outline="red", style=tk.ARC, width=3)
+        self.canvas.create_polygon([arrowpoint_x, arrowpoint_y, arrow_x1, arrow_y1, arrow_x2, arrow_y2], fill="red")
+        self.canvas.create_text([cx + label_dx, cy - label_dy], text=label, fill="black")
 
 
 if __name__ == "__main__":
 
-    testgui = Gui()
-    testautomaton = Automaton("Samples/sample1.json")
+    testautomaton = Automaton("Samples/sample2.json")
+    testgui = Gui(automaton=testautomaton)
+    # This code will no longer run, but hopefully it is at least a good reference.
     # testgui.drawautomaton(testautomaton, arcangle=0.5)
-    layout = testautomaton.layout(alignment=1.0, separation=1.2, steps=500, maxspeed=0.01, speed=5.0, generate=True)
-
-    def test():
-        global testgui
-        global testautomaton
-        global layout
-        try:
-            newlayout = layout.__next__()
-            testgui.canvas.delete(tk.ALL)
-            testgui.drawautomaton(testautomaton, layout=newlayout)
-            # After 20 milliseconds, run the function test.
-            # Any TK GUI element has this "after" function, and it doesn't seem important which object you use.
-            # So I just use the frame, which encloses the entire window.
-            testgui.frame.after(20, test)
-        except StopIteration:
-            pass
-
-    test()
+    # layout = testautomaton.layout(alignment=1.0, separation=1.2, steps=500, maxspeed=0.01, speed=5.0, generate=True)
+    #
+    # def test():
+    #     global testgui
+    #     global testautomaton
+    #     global layout
+    #     try:
+    #         newlayout = layout.__next__()
+    #         testgui.canvas.delete(tk.ALL)
+    #         testgui.drawautomaton(testautomaton, layout=newlayout)
+    #         # After 20 milliseconds, run the function test.
+    #         # Any TK GUI element has this "after" function, and it doesn't seem important which object you use.
+    #         # So I just use the frame, which encloses the entire window.
+    #         testgui.frame.after(20, test)
+    #     except StopIteration:
+    #         pass
+    #
+    # test()
     testgui.mainloop()

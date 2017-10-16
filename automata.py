@@ -81,7 +81,7 @@ class Automaton:
         self.currentstate = self.getnextstate(nextinput)
         return self.currentstate
 
-    def layout(self, alignment=1.0, separation=1.2, steps=500, maxspeed=0.2, speed=math.e, generate=False) -> dict:
+    def layout(self, alignment=1.0, separation=1.2, steps=500, maxspeed=0.2, speed=math.e) -> dict:
         """
         Lays out the states to try and minimize overlap between states and transitions.
         This is accomplished by treating each connection between states as a spring of a certain length,
@@ -91,7 +91,6 @@ class Automaton:
         :param steps: Number of steps for which to run the simulation
         :param maxspeed: Maximum "speed" for states to be moved around during simulation.
         :param speed: A constant that just needs to be arbitrarily tweaked.
-        :param generate: If True, this function returns a generator of every step of the simulation
         :return: A dictionary where each state in this automaton is a key, the value for which is a 2-tuple
                     representing the coordinates of the state after the layout is complete.
         """
@@ -128,11 +127,7 @@ class Automaton:
                                   result[state][1] + displacements[state][1]) for state in result}
             # (This has to be two steps because you can't modify a data structure while iterating over it)
             result = nextresult
-            # TODO: Remove this Yield
-            if generate:
-                yield result
-        if not generate:
-            return result
+        return result
 
 
 if __name__ == "__main__":
