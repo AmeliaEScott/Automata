@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from automata import Automaton
 import math
 
@@ -9,7 +10,7 @@ class Gui:
     testing, and will be removed or changed eventually. (This includes the initializer)
     """
 
-    def __init__(self, canvaswidth=700, canvasheight=700, automaton=None):
+    def __init__(self, canvaswidth=700, canvasheight=400, automaton=None):
 
         self.canvaswidth = canvaswidth
         self.canvasheight = canvasheight
@@ -26,6 +27,37 @@ class Gui:
             self.drawautomaton(self.automaton)
 
         # TODO: Add all the GUI elements. ((((( JARED, THIS IS PROBABLY WHERE YOU WANT TO DO THAT )))))
+
+        self.tabs = ttk.Notebook()
+        self.tabs.pack()
+
+        self.edittab = tk.Frame(self.tabs)
+        self.edittab.pack()
+        tk.Label(self.edittab, text="State name:").grid(row=0, column=0, sticky=tk.E)
+        self.stateNameEntry = tk.Entry(self.edittab)
+        self.stateNameEntry.grid(row=0, column=1)
+        tk.Button(self.edittab, text="Add State").grid(row=0, column=2, sticky=tk.W)
+        tk.Button(self.edittab, text="Remove State").grid(row=0, column=3, sticky=tk.W)
+        ttk.Separator(self.edittab, orient=tk.HORIZONTAL).grid(row=1, columnspan=5, sticky=tk.EW, pady=10)
+        tk.Label(self.edittab, text="From:").grid(row=2, column=0, sticky=tk.E)
+        self.fromEntry = tk.Entry(self.edittab)
+        self.fromEntry.grid(row=2, column=1)
+        tk.Label(self.edittab, text="To:").grid(row=3, column=0, sticky=tk.E)
+        self.toEntry = tk.Entry(self.edittab)
+        self.toEntry.grid(row=3, column=1)
+        tk.Label(self.edittab, text="Inputs:").grid(row=4, column=0, sticky=tk.E)
+        self.inputsEntry = tk.Entry(self.edittab)
+        self.inputsEntry.grid(row=4, column=1)
+        tk.Button(self.edittab, text="Add State Transition").grid(row=2, column=2, rowspan=3, sticky=tk.E)
+        tk.Button(self.edittab, text="Remove State Transition").grid(row=2, column=3, rowspan=3, sticky=tk.E)
+
+        self.playtab = tk.Frame(self.tabs)
+        self.playtab.pack()
+        tk.Label(self.playtab, text="Play tab text!").pack()
+
+        self.tabs.add(self.edittab, text="Edit Tab")
+        self.tabs.add(self.playtab, text="Play Tab")
+
         self.quit_button = tk.Button(self.frame, text="Quit", command=self.quit)
         self.quit_button.pack(side=tk.RIGHT)
 

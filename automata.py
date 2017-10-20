@@ -81,6 +81,41 @@ class Automaton:
         self.currentstate = self.getnextstate(nextinput)
         return self.currentstate
 
+    def addstate(self, statename):
+        if statename not in self.states:
+            self.states[statename] = {}
+
+    def removestate(self, statename):
+        if statename in self.states:
+            del self.states[statename]
+        for otherstate in self.states.values():
+            if statename in otherstate:
+                del otherstate[statename]
+
+    def addtransition(self, fromstate, tostate, inputs):
+        try:
+            inputs = list(inputs)
+        except TypeError:
+            inputs = [inputs]
+
+        if fromstate in self.states:
+            if tostate in self.states[fromstate]:
+                self.states[fromstate][tostate] += inputs
+            else:
+                self.states[fromstate][tostate] = inputs
+
+    def deletetransition(self, fromstate, tostate, inputs):
+        try:
+            inputs = list(inputs)
+        except TypeError:
+            inputs = [inputs]
+
+        if fromstate in self.states and tostate in self.states[fromstate]:
+            for input in inputs:
+                self.states[fromstate][tostate].remove(input)
+            if len(self.states[fromstate][tostate]) == 0:
+                del self[fromstate][tostate]
+
     def layout(self, alignment=1.0, separation=1.2, steps=500, maxspeed=0.2, speed=math.e) -> dict:
         """
         Lays out the states to try and minimize overlap between states and transitions.
