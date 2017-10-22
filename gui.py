@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from automata import Automaton
 import math
+import re
 
 
 class Gui:
@@ -36,8 +37,10 @@ class Gui:
         tk.Label(self.edittab, text="State name:").grid(row=0, column=0, sticky=tk.E)
         self.stateNameEntry = tk.Entry(self.edittab)
         self.stateNameEntry.grid(row=0, column=1)
-        tk.Button(self.edittab, text="Add State").grid(row=0, column=2, sticky=tk.W)
-        tk.Button(self.edittab, text="Remove State").grid(row=0, column=3, sticky=tk.W)
+        tk.Button(self.edittab, text="Add State",
+                  command=self.addstatecallback).grid(row=0, column=2, sticky=tk.EW)
+        tk.Button(self.edittab, text="Remove State",
+                  command=self.removestatecallback).grid(row=0, column=3, sticky=tk.EW)
         ttk.Separator(self.edittab, orient=tk.HORIZONTAL).grid(row=1, columnspan=5, sticky=tk.EW, pady=10)
         tk.Label(self.edittab, text="From:").grid(row=2, column=0, sticky=tk.E)
         self.fromEntry = tk.Entry(self.edittab)
@@ -48,8 +51,13 @@ class Gui:
         tk.Label(self.edittab, text="Inputs:").grid(row=4, column=0, sticky=tk.E)
         self.inputsEntry = tk.Entry(self.edittab)
         self.inputsEntry.grid(row=4, column=1)
-        tk.Button(self.edittab, text="Add State Transition").grid(row=2, column=2, rowspan=3, sticky=tk.E)
-        tk.Button(self.edittab, text="Remove State Transition").grid(row=2, column=3, rowspan=3, sticky=tk.E)
+        tk.Button(self.edittab, text="Add State Transition",
+                  command=self.addtransitioncallback).grid(row=2, column=2, rowspan=3, sticky=tk.EW)
+        tk.Button(self.edittab, text="Remove State Transition",
+                  command=self.removetransitioncallback).grid(row=2, column=3, rowspan=3, sticky=tk.EW)
+        ttk.Separator(self.edittab, orient=tk.HORIZONTAL).grid(row=5, columnspan=5, sticky=tk.EW, pady=10)
+        tk.Button(self.edittab, text="Redraw",
+                  command=self.redrawcallback).grid(row=6, column=1)
 
         self.playtab = tk.Frame(self.tabs)
         self.playtab.pack()
@@ -68,6 +76,37 @@ class Gui:
     def quit(self):
         print("Quitting!")
         self.frame.quit()
+
+    def addstatecallback(self):
+        statename = self.stateNameEntry.get()
+        self.automaton.addstate(statename)
+        self.redrawcallback()
+
+    def removestatecallback(self):
+        statename = self.stateNameEntry.get()
+        self.automaton.removestate(statename)
+        self.redrawcallback()
+
+    def addtransitioncallback(self):
+        fromstate = self.fromEntry.get()
+        tostate = self.toEntry.get()
+        inputs = re.split("\s*,\s*", self.inputsEntry.get())
+
+        # print("{} -> {}: {}".format(fromstate, tostate, inputs))
+
+        self.automaton.addtransition(fromstate, tostate, inputs)
+        self.redrawcallback()
+
+    def removetransitioncallback(self):
+        fromstate = self.fromEntry.get()
+        tostate = self.toEntry.get()
+        inputs = re.split("\s*,\s*", self.inputsEntry.get())
+        self.automaton.deletetransition(fromstate, tostate, inputs)
+        self.redrawcallback()
+
+    def redrawcallback(self):
+        self.canvas.delete(tk.ALL)
+        self.drawautomaton(self.automaton)
 
     def drawautomaton(self, automaton: Automaton, border=50, arcangle=0.7, stateradius=30, layout=None):
         """
@@ -149,8 +188,8 @@ class Gui:
         theta_a_degrees = theta_a * (180 / math.pi)
         theta_degrees = theta * (180 / math.pi)
 
-        label_dx = (r + labeloffset) * math.cos(theta_a + (theta / 2) / 2)  # Offset from center to place label
-        label_dy = (r + labeloffset) * math.sin(theta_a + (theta / 2) / 2)
+        label_dx = (r + labeloffset) * math.cos(theta_a + theta * 0.55)  # Offset from center to place label
+        label_dy = (r + labeloffset) * math.sin(theta_a + theta * 0.55)
 
         phi = 2 * math.asin(stateradius / (2 * r))
         arrowpoint_x = cx + (r * math.cos(theta_a + theta - phi))

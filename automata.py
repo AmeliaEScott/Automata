@@ -114,7 +114,7 @@ class Automaton:
             for input in inputs:
                 self.states[fromstate][tostate].remove(input)
             if len(self.states[fromstate][tostate]) == 0:
-                del self[fromstate][tostate]
+                del self.states[fromstate][tostate]
 
     def layout(self, alignment=1.0, separation=1.2, steps=500, maxspeed=0.2, speed=math.e) -> dict:
         """
