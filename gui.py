@@ -3,7 +3,7 @@ from tkinter import ttk
 from automata import Automaton
 import math
 import re
-
+import time
 
 class Gui:
     """
@@ -60,9 +60,18 @@ class Gui:
                   command=self.redrawcallback).grid(row=6, column=1)
 
         self.playtab = tk.Frame(self.tabs)
-        self.playtab.pack()
-        tk.Label(self.playtab, text="Play tab text!").pack()
+        tk.Label(self.playtab, text="Test Input:").grid(row=0,column=0,sticky=tk.E)
+        self.testEntry = tk.Entry(self.playtab)
+        self.testEntry.grid(row=0, column=1)
+        tk.Button(self.playtab,text="Play",command = self.runcallback).grid(row=1,column=0,sticky=tk.E)
+        tk.Button(self.playtab,text="Pause",command = self.pausecallback).grid(row=1,column=1, sticky=tk.W)
+        tk.Button(self.playtab,text="One Step",command = self.stepcallback).grid(row=1,column=1, sticky=tk.E)
+        tk.Scale(self.playtab,orient=tk.HORIZONTAL).grid(row=2,column=1,sticky=tk.W)
 
+        tk.Label(self.playtab, text="Current:").grid(row=3,column=0,sticky=tk.E)
+        self.currentChar = tk.Label(self.playtab, text="0")
+        self.currentChar.grid(row=3,column=1,sticky=tk.W)
+        self.playtab.pack()
         self.tabs.add(self.edittab, text="Edit Tab")
         self.tabs.add(self.playtab, text="Play Tab")
 
@@ -108,6 +117,48 @@ class Gui:
         self.canvas.delete(tk.ALL)
         self.drawautomaton(self.automaton)
 
+    def runcallback(self):
+        """
+        Runs through the current test string
+        """
+        t = self.canvas.find_withtag(self.automaton.currentstate)
+        teststr = self.testEntry.get()
+        for i in teststr:
+            self.canvas.after(0,self.drawstep(i))
+            self.canvas.update()
+            time.sleep(1)
+        self.automaton.currentstate = self.automaton.startstate
+            
+    def pausecallback(self):
+        print("pause")
+        """
+        TODO implement this
+        function to pause execution
+        """
+
+    def stepcallback(self):
+        """
+        TODO implement this
+        function to trigger a single step
+        """
+        print('step')
+
+    def drawstep(self, next):
+        """
+        Changes current state to white and changes next step to red.
+        Also updates the current input character
+        :param next: the next input
+        """
+        self.currentChar.config(text=next)
+
+        for s in self.automaton.currentstate:
+            self.canvas.itemconfig(self.canvas.find_withtag(s)[0],fill="white")
+
+        for j in self.automaton.getnextstate(next):
+            self.canvas.itemconfig(self.canvas.find_withtag(j)[0],fill="red")
+
+        self.automaton.step(next)
+
     def drawautomaton(self, automaton: Automaton, border=50, arcangle=0.7, stateradius=30, layout=None):
         """
         Draws the provided automaton on the canvas.
@@ -152,11 +203,11 @@ class Gui:
         :return: None
         """
         self.canvas.create_oval([coords[0] - radius, coords[1] - radius,
-                                coords[0] + radius, coords[1] + radius], fill="white", outline="black", width=5)
+                                coords[0] + radius, coords[1] + radius], fill="white", outline="black", width=5, tags = label)
         if final:
             self.canvas.create_oval([coords[0] - radius + 10, coords[1] - radius + 10,
                                      coords[0] + radius - 10, coords[1] + radius - 10],
-                                    fill="white", outline="black", width=5)
+                                    fill="white", outline="black", width=5, tags = label)
         self.canvas.create_text(coords, text=label, fill="black")
 
     def drawarc(self, a, b, label, theta=0.5, labeloffset=-10, stateradius=30, arrowangle=0.4, arrowlength=25):
