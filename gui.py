@@ -1,11 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import *
-from tkinter import filedialog
 from automata import Automaton
 import math
 import re
-import time
+
 
 class Gui:
     """
@@ -20,19 +18,31 @@ class Gui:
         self.automaton = automaton
 
         self.frame = tk.Frame(tk.Tk())
-        self.frame.pack()
+        self.frame.grid(row=0, column=0)
+
+        # self.inputiter is an iterator that iterates over the "Test input" to the automaton.
+        # For example, to test the input 'abcd', do iter('abcd')
+        self.inputiter = None
+
+        # If True, then stop auto-stepping through the automaton
+        self.paused = False
+
+        # Contains references to the circle for each state drawn on the canvas.
+        # To change the configuration for a state (E.g., to turn red to be active), do this:
+        # self.canvas.itemconfig(self.stateshapes[statename], fill='red')
+        self.stateshapes = {}
 
         self.canvas = tk.Canvas(master=self.frame, bg="white", borderwidth=0,
                                 height=self.canvasheight, width=self.canvaswidth)
-        self.canvas.pack()
+        self.canvas.grid(row=0, column=0)
 
         if self.automaton is not None:
             self.drawautomaton(self.automaton)
 
-        # TODO: Add all the GUI elements. ((((( JARED, THIS IS PROBABLY WHERE YOU WANT TO DO THAT )))))
+        self.tabs = ttk.Notebook(self.frame)
+        self.tabs.grid(row=1, column=0)
 
-        self.tabs = ttk.Notebook()
-        self.tabs.pack()
+        ############ EDIT TAB ############
 
         self.edittab = tk.Frame(self.tabs)
         self.edittab.pack()
@@ -61,28 +71,28 @@ class Gui:
         tk.Button(self.edittab, text="Redraw",
                   command=self.redrawcallback).grid(row=6, column=1)
 
+        ############ EDIT TAB ############
+
         self.playtab = tk.Frame(self.tabs)
-        tk.Label(self.playtab, text="Test Input:").grid(row=0,column=0,sticky=tk.E)
+        self.playtab.pack()
+        tk.Label(self.playtab, text="Test Input:").grid(row=0, column=0, sticky=tk.E)
         self.testEntry = tk.Entry(self.playtab)
         self.testEntry.grid(row=0, column=1)
-        tk.Button(self.playtab,text="Play",command = self.runcallback).grid(row=1,column=0,sticky=tk.E)
-        tk.Button(self.playtab,text="Pause",command = self.pausecallback).grid(row=1,column=1, sticky=tk.W)
-        tk.Button(self.playtab,text="One Step",command = self.stepcallback).grid(row=1,column=1, sticky=tk.E)
-        tk.Scale(self.playtab,orient=tk.HORIZONTAL).grid(row=2,column=1,sticky=tk.W)
+        tk.Button(self.playtab, text="Play", command=self.runcallback).grid(row=1, column=0, sticky=tk.E)
+        tk.Button(self.playtab, text="Pause", command=self.pausecallback).grid(row=1, column=1, sticky=tk.W)
+        tk.Button(self.playtab, text="One Step", command=self.stepcallback).grid(row=1, column=1, sticky=tk.E)
+        tk.Scale(self.playtab, orient=tk.HORIZONTAL).grid(row=2, column=1, sticky=tk.W)
 
-        tk.Label(self.playtab, text="Current:").grid(row=3,column=0,sticky=tk.E)
+        tk.Label(self.playtab, text="Current:").grid(row=3, column=0, sticky=tk.E)
         self.currentChar = tk.Label(self.playtab, text="0")
-        self.currentChar.grid(row=3,column=1,sticky=tk.W)
-        self.playtab.pack()
+        self.currentChar.grid(row=3, column=1, sticky=tk.W)
+
+        # End of tabs
         self.tabs.add(self.edittab, text="Edit Tab")
         self.tabs.add(self.playtab, text="Play Tab")
 
         self.quit_button = tk.Button(self.frame, text="Quit", command=self.quit)
-        self.load_button = tk.Button(self.frame, text="Load", command=self.load)
-        self.save_button = tk.Button(self.frame, text="Save", command=self.save)
-        self.quit_button.pack(side=tk.RIGHT)
-        self.load_button.pack(side=tk.RIGHT)
-        self.save_button.pack(side=tk.RIGHT)
+        self.quit_button.grid(row=2, column=0, sticky=tk.EW)
 
     def mainloop(self):
         self.frame.master.mainloop()
@@ -91,17 +101,6 @@ class Gui:
     def quit(self):
         print("Quitting!")
         self.frame.quit()
-
-    def save(self):
-        f = filedialog.asksaveasfile('w',filetypes=(("JSON file", "*.json"),("All files", "*.*")))
-        f.write(self.automaton.getJSON())
-        f.close()
-
-
-    def load(self):
-        fname = filedialog.askopenfilename(filetypes=(("JSON file", "*.json"),("All files", "*.*")))
-        self.automaton = Automaton(str(fname))
-        self.redrawcallback()
 
     def addstatecallback(self):
         statename = self.stateNameEntry.get()
@@ -117,9 +116,6 @@ class Gui:
         fromstate = self.fromEntry.get()
         tostate = self.toEntry.get()
         inputs = re.split("\s*,\s*", self.inputsEntry.get())
-
-        # print("{} -> {}: {}".format(fromstate, tostate, inputs))
-
         self.automaton.addtransition(fromstate, tostate, inputs)
         self.redrawcallback()
 
@@ -138,43 +134,53 @@ class Gui:
         """
         Runs through the current test string
         """
-        t = self.canvas.find_withtag(self.automaton.currentstate)
-        teststr = self.testEntry.get()
-        for i in teststr:
-            self.canvas.after(0,self.drawstep(i))
-            self.canvas.update()
-            time.sleep(1)
-        self.automaton.currentstate = self.automaton.startstate
-            
+        self.paused = False
+        self.step(continuous=True)
+
     def pausecallback(self):
-        print("pause")
-        """
-        TODO implement this
-        function to pause execution
-        """
+        self.paused = True
 
     def stepcallback(self):
-        """
-        TODO implement this
-        function to trigger a single step
-        """
-        print('step')
+        # This has to temporarily unpause, because self.step will do nothing if it is paused.
+        self.paused = False
+        self.step(self.automaton.currentstate)
+        self.paused = True
 
-    def drawstep(self, next):
+    def step(self, continuous=False):
         """
-        Changes current state to white and changes next step to red.
-        Also updates the current input character
-        :param next: the next input
+        Steps the automaton based on the input.
+        :param continuous: If True, then this function sets a callback to call this function again after a delay,
+            and continues to do so until either it runs out of input, or it is paused. (self.paused = True)
         """
-        self.currentChar.config(text=next)
+        if not self.paused:
+            if self.inputiter is None:
+                self.inputiter = iter(self.testEntry.get())
+                self.automaton.start()
+            try:
+                self.automaton.step(next(self.inputiter))
+                self.setactivestate(self.automaton.currentstate)
+                if continuous:
+                    # TODO: Change this delay based on the speed slider.
+                    self.frame.after(1000, self.step, True)
+            except StopIteration:
+                self.inputiter = None
+                self.paused = True
+                # If we are done iterating, then turn off all the active states.
+                self.setactivestate(set())
 
-        for s in self.automaton.currentstate:
-            self.canvas.itemconfig(self.canvas.find_withtag(s)[0],fill="white")
-
-        for j in self.automaton.getnextstate(next):
-            self.canvas.itemconfig(self.canvas.find_withtag(j)[0],fill="red")
-
-        self.automaton.step(next)
+    def setactivestate(self, states):
+        """
+        Visually changes the specified states to be activated.
+        :param states: An iterable of state names. (E.g., {'A', 'B'} )
+        :return: None
+        """
+        print("Setting active state: {}".format(states))
+        # First, deactivate all the states...
+        for shape in self.stateshapes.values():
+            self.canvas.itemconfig(shape, fill="white")
+        # Then activate the new ones
+        for state in states:
+            self.canvas.itemconfig(self.stateshapes[state], fill="red")
 
     def drawautomaton(self, automaton: Automaton, border=50, arcangle=0.7, stateradius=30, layout=None):
         """
@@ -219,12 +225,13 @@ class Gui:
         :param final: If True, this state will be rendered as a final state (with double outline)
         :return: None
         """
-        self.canvas.create_oval([coords[0] - radius, coords[1] - radius,
-                                coords[0] + radius, coords[1] + radius], fill="white", outline="black", width=5, tags = label)
+        self.stateshapes[label] = self.canvas.create_oval([coords[0] - radius, coords[1] - radius,
+                                                           coords[0] + radius, coords[1] + radius],
+                                                          fill="white", outline="black", width=5)
         if final:
             self.canvas.create_oval([coords[0] - radius + 10, coords[1] - radius + 10,
                                      coords[0] + radius - 10, coords[1] + radius - 10],
-                                    fill="white", outline="black", width=5, tags = label)
+                                    fill="white", outline="black", width=5)
         self.canvas.create_text(coords, text=label, fill="black")
 
     def drawarc(self, a, b, label, theta=0.5, labeloffset=-10, stateradius=30, arrowangle=0.4, arrowlength=25):

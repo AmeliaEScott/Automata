@@ -64,6 +64,9 @@ class Automaton:
         """
         return json.dumps(self.JSON)
 
+    def start(self):
+        self.currentstate = {self.startstate}
+
     def getnextstate(self, nextinput):
         """
         Returns the next state without actually advancing the automaton
