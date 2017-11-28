@@ -1,0 +1,1 @@
+{"start": "A", "transitions": {"B": {"D": ["b"]}, "F": {"C": ["a"]}, "C": {"F": ["b"]}, "A": {"B": ["a"], "C": ["a"]}, "E": {"B": ["b"]}, "D": {"E": ["a"]}}, "finalstates": ["B", "C"], "description": "This is just an example of a slightly less simple finite automaton", "name": "Another Sample Automaton"}

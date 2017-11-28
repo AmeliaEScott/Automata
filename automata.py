@@ -18,10 +18,14 @@ class Automaton:
         else:
             # The application is not frozen.
             datadir = os.path.dirname(__file__)
-        filepath = os.path.join(datadir, filepath)
+        if len(filepath) is not 0 :
+            if filepath[0] is not '/':
+                filepath = os.path.join(datadir, filepath)
+
 
         with open(filepath) as file:
             data = json.load(file)
+        self.JSON = data
         self.name = data["name"]
         self.description = data["description"]
 
@@ -53,6 +57,12 @@ class Automaton:
         self.startstate = data["start"]
 
         self.currentstate = {self.startstate}
+    def getJSON(self):
+        """
+                Returns the data as a JSON formatted string
+                :return: A string that contains the JSON data
+        """
+        return json.dumps(self.JSON)
 
     def getnextstate(self, nextinput):
         """

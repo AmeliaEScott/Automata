@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import *
+from tkinter import filedialog
 from automata import Automaton
 import math
 import re
@@ -76,7 +78,11 @@ class Gui:
         self.tabs.add(self.playtab, text="Play Tab")
 
         self.quit_button = tk.Button(self.frame, text="Quit", command=self.quit)
+        self.load_button = tk.Button(self.frame, text="Load", command=self.load)
+        self.save_button = tk.Button(self.frame, text="Save", command=self.save)
         self.quit_button.pack(side=tk.RIGHT)
+        self.load_button.pack(side=tk.RIGHT)
+        self.save_button.pack(side=tk.RIGHT)
 
     def mainloop(self):
         self.frame.master.mainloop()
@@ -85,6 +91,17 @@ class Gui:
     def quit(self):
         print("Quitting!")
         self.frame.quit()
+
+    def save(self):
+        f = filedialog.asksaveasfile('w',filetypes=(("JSON file", "*.json"),("All files", "*.*")))
+        f.write(self.automaton.getJSON())
+        f.close()
+
+
+    def load(self):
+        fname = filedialog.askopenfilename(filetypes=(("JSON file", "*.json"),("All files", "*.*")))
+        self.automaton = Automaton(str(fname))
+        self.redrawcallback()
 
     def addstatecallback(self):
         statename = self.stateNameEntry.get()
