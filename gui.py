@@ -20,7 +20,6 @@ class Gui:
 
         self.frame = tk.Frame(tk.Tk())
         self.frame.grid(row=0, column=0)
-
         # self.inputiter is an iterator that iterates over the "Test input" to the automaton.
         # For example, to test the input 'abcd', do iter('abcd')
         self.inputiter = None
@@ -82,7 +81,8 @@ class Gui:
         tk.Button(self.playtab, text="Play", command=self.runcallback).grid(row=1, column=0, sticky=tk.E)
         tk.Button(self.playtab, text="Pause", command=self.pausecallback).grid(row=1, column=1, sticky=tk.W)
         tk.Button(self.playtab, text="One Step", command=self.stepcallback).grid(row=1, column=1, sticky=tk.E)
-        tk.Scale(self.playtab, orient=tk.HORIZONTAL).grid(row=2, column=1, sticky=tk.W)
+        self.s = tk.Scale(self.playtab, orient=tk.HORIZONTAL)
+        self.s.grid(row=2, column=1, sticky=tk.W)
 
         tk.Label(self.playtab, text="Current:").grid(row=3, column=0, sticky=tk.E)
         self.currentChar = tk.Label(self.playtab, text="0")
@@ -173,11 +173,12 @@ class Gui:
                 self.inputiter = iter(self.testEntry.get())
                 self.automaton.start()
             try:
-                self.automaton.step(next(self.inputiter))
+                nextInput = next(self.inputiter)
+                self.currentChar.config(text = nextInput)
+                self.automaton.step(nextInput)
                 self.setactivestate(self.automaton.currentstate)
                 if continuous:
-                    # TODO: Change this delay based on the speed slider.
-                    self.frame.after(1000, self.step, True)
+                    self.frame.after(100*self.s.get()+100, self.step, True)
             except StopIteration:
                 self.inputiter = None
                 self.paused = True
@@ -197,6 +198,7 @@ class Gui:
         # Then activate the new ones
         for state in states:
             self.canvas.itemconfig(self.stateshapes[state], fill="red")
+
 
     def drawautomaton(self, automaton: Automaton, border=50, arcangle=0.7, stateradius=30, layout=None):
         """
