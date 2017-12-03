@@ -22,9 +22,9 @@ class Automaton:
             if filepath[0] is not '/':
                 filepath = os.path.join(datadir, filepath)
 
-
         with open(filepath) as file:
             data = json.load(file)
+
         self.JSON = data
         self.name = data["name"]
         self.description = data["description"]
@@ -57,12 +57,13 @@ class Automaton:
         self.startstate = data["start"]
 
         self.currentstate = {self.startstate}
+
     def getJSON(self):
         """
-                Returns the data as a JSON formatted string
-                :return: A string that contains the JSON data
+        Returns the data as a JSON formatted string
+        :return: A string that contains the JSON data
         """
-        return json.dumps(self.JSON)
+        return json.dumps(self.JSON, indent=4, sort_keys=True)
 
     def start(self):
         self.currentstate = {self.startstate}

@@ -71,16 +71,20 @@ class Gui:
         tk.Button(self.edittab, text="Redraw",
                   command=self.redrawcallback).grid(row=6, column=1)
 
-        ############ EDIT TAB ############
+        ############ PLAY TAB ############
 
         self.playtab = tk.Frame(self.tabs)
         self.playtab.pack()
         tk.Label(self.playtab, text="Test Input:").grid(row=0, column=0, sticky=tk.E)
         self.testEntry = tk.Entry(self.playtab)
         self.testEntry.grid(row=0, column=1)
+        self.testEntry.bind("<Key>", self.inputkeycallback)
         tk.Button(self.playtab, text="Play", command=self.runcallback).grid(row=1, column=0, sticky=tk.E)
         tk.Button(self.playtab, text="Pause", command=self.pausecallback).grid(row=1, column=1, sticky=tk.W)
         tk.Button(self.playtab, text="One Step", command=self.stepcallback).grid(row=1, column=1, sticky=tk.E)
+        tk.Button(self.playtab, text="Restart", command=self.restartcallback).grid(row=1, column=2, sticky=tk.W)
+        self.listentokeyboard = tk.IntVar()
+        tk.Checkbutton(self.playtab, text="Listen to Keyboard", var=self.listentokeyboard).grid(row=1, column=3)
         self.s = tk.Scale(self.playtab, orient=tk.HORIZONTAL)
         self.s.grid(row=2, column=1, sticky=tk.W)
 
@@ -111,7 +115,6 @@ class Gui:
         f = filedialog.asksaveasfile('w',filetypes=(("JSON file", "*.json"),("All files", "*.*")))
         f.write(self.automaton.getJSON())
         f.close()
-
 
     def load(self):
         fname = filedialog.askopenfilename(filetypes=(("JSON file", "*.json"),("All files", "*.*")))
@@ -162,6 +165,18 @@ class Gui:
         self.step(self.automaton.currentstate)
         self.paused = True
 
+    def inputkeycallback(self, event):
+        if self.listentokeyboard.get() == 1 and event.char.isprintable():
+            self.inputiter = iter(event.char)
+            self.paused = False
+            self.step()
+            self.paused = True
+
+    def restartcallback(self):
+        self.paused = True
+        self.inputiter = None
+        self.setactivestate([])
+
     def step(self, continuous=False):
         """
         Steps the automaton based on the input.
@@ -174,7 +189,7 @@ class Gui:
                 self.automaton.start()
             try:
                 nextInput = next(self.inputiter)
-                self.currentChar.config(text = nextInput)
+                self.currentChar.config(text=nextInput)
                 self.automaton.step(nextInput)
                 self.setactivestate(self.automaton.currentstate)
                 if continuous:
@@ -198,7 +213,6 @@ class Gui:
         # Then activate the new ones
         for state in states:
             self.canvas.itemconfig(self.stateshapes[state], fill="red")
-
 
     def drawautomaton(self, automaton: Automaton, border=50, arcangle=0.7, stateradius=30, layout=None):
         """
