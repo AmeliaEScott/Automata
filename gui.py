@@ -53,6 +53,10 @@ class Gui:
                   command=self.addstatecallback).grid(row=0, column=2, sticky=tk.EW)
         tk.Button(self.edittab, text="Remove State",
                   command=self.removestatecallback).grid(row=0, column=3, sticky=tk.EW)
+        self.start = tk.IntVar()
+        tk.Checkbutton(self.edittab, text="Start", var=self.start).grid(row=0, column=4)
+        self.finish = tk.IntVar()
+        tk.Checkbutton(self.edittab, text="Final", var=self.finish).grid(row=0, column=5)
         ttk.Separator(self.edittab, orient=tk.HORIZONTAL).grid(row=1, columnspan=5, sticky=tk.EW, pady=10)
         tk.Label(self.edittab, text="From:").grid(row=2, column=0, sticky=tk.E)
         self.fromEntry = tk.Entry(self.edittab)
@@ -69,7 +73,14 @@ class Gui:
                   command=self.removetransitioncallback).grid(row=2, column=3, rowspan=3, sticky=tk.EW)
         ttk.Separator(self.edittab, orient=tk.HORIZONTAL).grid(row=5, columnspan=5, sticky=tk.EW, pady=10)
         tk.Button(self.edittab, text="Redraw",
-                  command=self.redrawcallback).grid(row=6, column=1)
+                  command=self.redrawcallback).grid(row=6, column=0)
+
+        self.quit_button = tk.Button(self.edittab, text="Quit", command=self.quit)
+        self.load_button = tk.Button(self.edittab, text="Load", command=self.load)
+        self.save_button = tk.Button(self.edittab, text="Save", command=self.save)
+        self.quit_button.grid(row=6, column=1,sticky = tk.EW)
+        self.load_button.grid(row=6, column=2,sticky = tk.EW)
+        self.save_button.grid(row=6, column=3,sticky = tk.EW)
 
         ############ PLAY TAB ############
 
@@ -86,22 +97,24 @@ class Gui:
         self.listentokeyboard = tk.IntVar()
         tk.Checkbutton(self.playtab, text="Listen to Keyboard", var=self.listentokeyboard).grid(row=1, column=3)
         self.s = tk.Scale(self.playtab, orient=tk.HORIZONTAL)
+        tk.Label(self.playtab, text="Speed:").grid(row=2, column=0, sticky=tk.S)
         self.s.grid(row=2, column=1, sticky=tk.W)
 
-        tk.Label(self.playtab, text="Current:").grid(row=3, column=0, sticky=tk.E)
+        tk.Label(self.playtab, text="Current:").grid(row=3, column=0, sticky=tk.W)
         self.currentChar = tk.Label(self.playtab, text="0")
         self.currentChar.grid(row=3, column=1, sticky=tk.W)
 
+        self.quit_button = tk.Button(self.playtab, text="Quit", command=self.quit)
+        self.load_button = tk.Button(self.playtab, text="Load", command=self.load)
+        self.save_button = tk.Button(self.playtab, text="Save", command=self.save)
+        self.quit_button.grid(row=4, column=1, sticky=tk.EW)
+        self.load_button.grid(row=4, column=2, sticky=tk.EW)
+        self.save_button.grid(row=4, column=3, sticky=tk.EW)
         # End of tabs
         self.tabs.add(self.edittab, text="Edit Tab")
         self.tabs.add(self.playtab, text="Play Tab")
 
-        self.quit_button = tk.Button(self.frame, text="Quit", command=self.quit)
-        self.load_button = tk.Button(self.frame, text="Load", command=self.load)
-        self.save_button = tk.Button(self.frame, text="Save", command=self.save)
-        self.quit_button.grid(row=2, column=0, sticky=tk.EW)
-        self.load_button.grid(row=2, column=1, sticky=tk.EW)
-        self.save_button.grid(row=2, column=2, sticky=tk.W)
+
 
     def mainloop(self):
         self.frame.master.mainloop()
@@ -193,7 +206,7 @@ class Gui:
                 self.automaton.step(nextInput)
                 self.setactivestate(self.automaton.currentstate)
                 if continuous:
-                    self.frame.after(100*self.s.get()+100, self.step, True)
+                    self.frame.after(100*(100-self.s.get())+100, self.step, True)
             except StopIteration:
                 self.inputiter = None
                 self.paused = True
@@ -246,7 +259,10 @@ class Gui:
 
         for state in layout:
             coords = scale(layout[state])
-            self.drawstate(coords, state, final=state in automaton.finalstates)
+            if state is automaton.startstate:
+                self.drawrect(coords, state)
+            else:
+                self.drawstate(coords, state, final=state in automaton.finalstates)
 
     def drawstate(self, coords, label, radius=30, final=False):
         """
@@ -264,6 +280,19 @@ class Gui:
             self.canvas.create_oval([coords[0] - radius + 10, coords[1] - radius + 10,
                                      coords[0] + radius - 10, coords[1] + radius - 10],
                                     fill="white", outline="black", width=5)
+        self.canvas.create_text(coords, text=label, fill="black")
+
+    def drawrect(self, coords, label, radius=30):
+        """
+        Draws a single state on the canvas but a rectange, including its label.
+        :param coords: Coordinates on the canvas at which to draw the state.
+        :param label: Label or name of the state.
+        :param radius: Radius in pixels of the circle representing the state
+        :return: None
+        """
+        self.stateshapes[label] = self.canvas.create_rectangle([coords[0] - radius, coords[1] - radius,
+                                                           coords[0] + radius, coords[1] + radius],
+                                                          fill="white", outline="black", width=5)
         self.canvas.create_text(coords, text=label, fill="black")
 
     def drawarc(self, a, b, label, theta=0.5, labeloffset=-10, stateradius=30, arrowangle=0.4, arrowlength=25):
