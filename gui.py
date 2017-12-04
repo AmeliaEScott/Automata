@@ -254,8 +254,15 @@ class Gui:
             for state_b in automaton.states[state_a]:
                 transition = automaton.states[state_a][state_b]
                 label = ", ".join(transition)
-                self.drawarc(scale(layout[state_a]), scale(layout[state_b]), label=label,
-                             theta=arcangle)
+                if state_a == state_b:
+                    x, y = scale(layout[state_a])
+                    self.canvas.create_oval([x - 1.5 * stateradius, y - 0.5 * stateradius, x, y + 0.5 * stateradius],
+                                            width=3, outline="red")
+                    self.canvas.create_text([x - 2 * stateradius, y], text=label, fill="black")
+                    print("Arcing to self: {}".format(state_a))
+                else:
+                    self.drawarc(scale(layout[state_a]), scale(layout[state_b]), label=label,
+                                 theta=arcangle)
 
         for state in layout:
             coords = scale(layout[state])
