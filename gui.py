@@ -144,14 +144,15 @@ class Gui:
 
     def addstatecallback(self):
         statename = self.stateNameEntry.get()
-        start = False
-        final = False
-        if self.start.get():
-            start = True
-        if self.finish.get():
-            final = True
-        self.automaton.addstate(statename,start,final)
-        self.redrawcallback()
+        if len(statename)!=0:
+            start = False
+            final = False
+            if self.start.get():
+                start = True
+            if self.finish.get():
+                final = True
+            self.automaton.addstate(statename,start,final)
+            self.redrawcallback()
 
     def removestatecallback(self):
         statename = self.stateNameEntry.get()
