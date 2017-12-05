@@ -103,7 +103,9 @@ class Gui:
         tk.Label(self.playtab, text="Current:").grid(row=3, column=0, sticky=tk.W)
         self.currentChar = tk.Label(self.playtab, text="0")
         self.currentChar.grid(row=3, column=1, sticky=tk.W)
-
+        tk.Label(self.playtab, text="Validity:").grid(row=3, column=2, sticky=tk.W)
+        self.validity = tk.Label(self.playtab, text="")
+        self.validity.grid(row=3, column=3, sticky=tk.W)
         self.quit_button = tk.Button(self.playtab, text="Quit", command=self.quit)
         self.load_button = tk.Button(self.playtab, text="Load", command=self.load)
         self.save_button = tk.Button(self.playtab, text="Save", command=self.save)
@@ -114,11 +116,17 @@ class Gui:
         self.tabs.add(self.edittab, text="Edit Tab")
         self.tabs.add(self.playtab, text="Play Tab")
 
-
+        tk.Button(self.frame,text="New",command=self.new).grid(row=2, column=0)
+        # self.error = tk.Label(self.frame, text="Errors:")
+        # self.error.grid(row=3, column=0, sticky=tk.EW)
 
     def mainloop(self):
         self.frame.master.mainloop()
         self.frame.master.destroy()
+
+    def new(self):
+        self.automaton = Automaton("")
+        self.redrawcallback()
 
     def quit(self):
         print("Quitting!")
@@ -136,7 +144,13 @@ class Gui:
 
     def addstatecallback(self):
         statename = self.stateNameEntry.get()
-        self.automaton.addstate(statename)
+        start = False
+        final = False
+        if self.start.get():
+            start = True
+        if self.finish.get():
+            final = True
+        self.automaton.addstate(statename,start,final)
         self.redrawcallback()
 
     def removestatecallback(self):
@@ -176,6 +190,7 @@ class Gui:
         # This has to temporarily unpause, because self.step will do nothing if it is paused.
         self.paused = False
         self.step(self.automaton.currentstate)
+
         self.paused = True
 
     def inputkeycallback(self, event):
@@ -205,6 +220,14 @@ class Gui:
                 self.currentChar.config(text=nextInput)
                 self.automaton.step(nextInput)
                 self.setactivestate(self.automaton.currentstate)
+                valid = False
+                for i in self.automaton.currentstate:
+                    if i in self.automaton.finalstates:
+                        valid = True
+                if valid:
+                    self.validity.config(text="Valid")
+                else:
+                    self.validity.config(text="Invalid")
                 if continuous:
                     self.frame.after(100*(100-self.s.get())+100, self.step, True)
             except StopIteration:

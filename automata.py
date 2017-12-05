@@ -21,10 +21,10 @@ class Automaton:
         if len(filepath) is not 0 :
             if filepath[0] is not '/':
                 filepath = os.path.join(datadir, filepath)
-
+        if len(filepath) is 0:
+            filepath = "Samples/sample5.json"
         with open(filepath) as file:
             data = json.load(file)
-
         self.JSON = data
         self.name = data["name"]
         self.description = data["description"]
@@ -95,13 +95,21 @@ class Automaton:
         self.currentstate = self.getnextstate(nextinput)
         return self.currentstate
 
-    def addstate(self, statename):
+    def addstate(self, statename,start,final):
+        if start and len(self.startstate) is 0:
+            self.startstate = statename
+        if final:
+            self.finalstates.append(statename)
         if statename not in self.states:
             self.states[statename] = {}
 
     def removestate(self, statename):
         if statename in self.states:
             del self.states[statename]
+        if statename in self.startstate:
+            self.startstate = ""
+        if statename in self.finalstates:
+            self.finalstates.remove(statename)
         for otherstate in self.states.values():
             if statename in otherstate:
                 del otherstate[statename]
