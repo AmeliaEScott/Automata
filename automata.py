@@ -21,8 +21,8 @@ class Automaton:
         if len(filepath) is not 0 :
             if filepath[0] is not '/':
                 filepath = os.path.join(datadir, filepath)
-        if len(filepath) is 0:
-            filepath = "Samples/default.json"
+        else:
+            filepath = os.path.join(datadir, "Samples/default.json")
         with open(filepath) as file:
             data = json.load(file)
         self.JSON = data
